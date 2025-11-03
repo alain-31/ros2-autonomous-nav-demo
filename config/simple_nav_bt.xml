@@ -1,0 +1,31 @@
+<!--
+  Simple Behavior Tree for Basic Navigation
+  This BT computes a path and follows it without recovery behaviors
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="NavigateWithReplanning">
+      
+      <!-- Rate controller to limit replanning frequency -->
+      <RateController hz="1.0">
+        <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+          
+          <!-- Compute path to goal -->
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="Navfn"/>
+          
+          <!-- If compute path fails, clear costmap and retry once -->
+          <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+        </RecoveryNode>
+      </RateController>
+
+      <!-- Follow the computed path -->
+      <RecoveryNode number_of_retries="1" name="FollowPath">
+        <FollowPath path="{path}" controller_id="FollowPath"/>
+        
+        <!-- If follow path fails, clear costmap and retry once -->
+        <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+      </RecoveryNode>
+
+    </PipelineSequence>
+  </BehaviorTree>
+</root>

@@ -1,0 +1,66 @@
+slam_toolbox:
+  ros__parameters:
+    use_sim_time: false
+    
+    # Frames
+    map_frame: map
+    odom_frame: odom
+    base_frame: base_footprint
+    publish_tf: true
+    
+    # Mode
+    mode: mapping
+
+    # Mapping mode settings
+    provide_odom_frame: true
+    map_update_interval: 0.5 
+
+    scan_topic: /scan
+
+    # TF & map publishing
+    transform_publish_period: 0.05
+    
+    # Motion thresholds
+    minimum_travel_distance: 0.03 
+    minimum_travel_heading: 0.05
+
+    # Use every scan
+    throttle_scans: 1
+
+    # Scan matching - 
+    link_match_minimum_response_fine: 0.55   
+    link_match_minimum_response_coarse: 0.35 
+    link_match_minimum_chain_size: 8         
+    link_scan_maximum_distance: 1.0          
+
+    scan_buffer_size: 10
+
+    # Loop closure 
+    loop_search_maximum_distance: 2.0       
+    loop_match_minimum_chain_size: 5        
+    
+    # Map & sensor
+    resolution: 0.01
+    min_laser_range: 0.10  #  C1 blind zone is 0.05m, use 0.10 for safety
+    max_laser_range: 2.0  
+
+    # Loop closure - Enable it for small spaces!
+    do_loop_closing: true  #  Enable for better map consistency
+    loop_match_maximum_variance_coarse: 3.0  
+    loop_match_minimum_response_coarse: 0.30 
+    loop_match_minimum_response_fine: 0.40   
+    loop_search_space_dimension: 4.0         
+    loop_search_space_resolution: 0.05
+    loop_search_space_smear_deviation: 0.03
+
+    enable_interactive_mode: false
+
+    # QoS
+    use_qos_from_params: true
+    qos_overrides:
+      /scan:
+        subscription:
+          history: keep_last
+          depth: 5
+          reliability: best_effort
+          durability: volatile

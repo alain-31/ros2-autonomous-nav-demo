@@ -1,0 +1,220 @@
+# ===========================
+# Nav2 params (ROS 2 Humble)
+# Unambiguous: frames live ONLY on costmap nodes
+# ===========================
+
+# ---------------------------
+# Global toggles / defaults
+# ---------------------------
+amcl:  # not used if you localize with SLAM Toolbox; harmless to leave absent
+  ros__parameters: {}
+
+map_server:
+  ros__parameters:
+    use_sim_time: false
+    # If you use a static map, set the path below (or pass via CLI).
+    # yaml_filename: "/home/alain/bumperbot_ws/map/playground_post_3.yaml"
+
+# ---------------------------
+# Planner Server (global planner)
+# ---------------------------
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 10.0
+    planner_plugins: ["Navfn"]
+    Navfn:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.1
+      use_astar: false
+      allow_unknown: true
+
+# ---------------------------
+# Controller Server (local controller)
+# ---------------------------
+controller_server:
+  ros__parameters:
+    # Slightly higher control rate smooths commands
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.02
+    min_theta_velocity_threshold: 0.02
+
+    goal_checker_plugins: ["general_goal_checker"]
+
+    general_goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.02 
+      yaw_goal_tolerance: 0.40 # <-- was 0.15 ~8.6° (tune tighter if needed)
+      stateful: true
+
+    controller_plugins: ["FollowPath"]
+
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+
+      # 1) Back off cruising speed & accel a touch
+      desired_linear_vel: 0.21 
+      max_linear_accel: 0.30   
+      max_linear_decel: 5.00
+
+      # Slow down earlier as you approach goals
+      min_approach_linear_velocity: 0.05 
+      approach_velocity_scaling_dist: 0.25 
+
+      # 2) Keep a floor but regulate more on tight turns
+      regulate_linear_velocity: true
+      use_cost_regulated_linear_velocity_scale: false
+      regulated_linear_scaling_min_speed: 0.21   
+      regulated_linear_scaling_min_radius: 0.25   # was 0.10 (slows more on sharp curvature)
+      cost_scaling_dist: 0.1
+      cost_scaling_gain: 1.0
+
+      # 3) Make heading corrections less brutal
+      use_rotate_to_heading: false
+      rotate_to_heading_min_angle: 0.52   # ~30°, rotate-in-place if far off heading
+      rotate_to_heading_angular_vel: 0.90 
+      max_angular_vel: 1.10               
+      max_angular_accel: 1.50             
+
+      # 4) Smoother path tracking with longer, speed-scaled lookahead
+      use_velocity_scaled_lookahead_dist: true
+      lookahead_dist: 0.25                
+      min_lookahead_dist: 0.15            
+      max_lookahead_dist: 0.20            
+      lookahead_time: 1.0
+
+      transform_tolerance: 0.05           
+
+# ---------------------------
+# Behavior Server (recoveries, spin, etc.)
+# ---------------------------
+behavior_server:
+  ros__parameters:
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
+    spin:
+      plugin: "nav2_behaviors/Spin"
+    backup:
+      plugin: "nav2_behaviors/BackUp"
+    drive_on_heading:
+      plugin: "nav2_behaviors/DriveOnHeading"
+    wait:
+      plugin: "nav2_behaviors/Wait"
+    global_frame: "map"
+    robot_base_frame: "base_footprint"
+    transform_tolerance: 0.2
+
+# ---------------------------
+# BT Navigator
+# ---------------------------
+bt_navigator:
+  ros__parameters:
+    global_frame: "map"
+    robot_base_frame: "base_footprint"
+    transform_tolerance: 0.2
+    default_nav_to_pose_bt_xml: "/home/alain/bumperbot_ws/src/bumperbot_bringup/behavior_trees/simple_nav_bt.xml"
+    default_nav_through_poses_bt_xml: "/home/alain/bumperbot_ws/src/bumperbot_bringup/behavior_trees/simple_nav_bt.xml"
+    plugin_lib_names:
+         - nav2_compute_path_to_pose_action_bt_node
+         - nav2_follow_path_action_bt_node
+         - nav2_clear_costmap_service_bt_node
+         - nav2_recovery_node_bt_node
+         - nav2_pipeline_sequence_bt_node
+         - nav2_rate_controller_bt_node
+
+# ---------------------------
+# Smoother Server (optional but handy)
+# ---------------------------
+smoother_server:
+  ros__parameters:
+    smoother_plugins: ["simple_smoother"]
+    simple_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 1.0e-10
+      do_refinement: true
+      refinement_num: 2
+
+# =================================================
+# COSTMAP COMPONENT NODES (single source of truth)
+# =================================================
+
+# -------- Global costmap (planning) --------
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: false
+      global_frame: "map"
+      robot_base_frame: "base_footprint"
+
+      # Static map for global planning; no rolling window
+      rolling_window: false
+      track_unknown_space: false
+
+      resolution: 0.02 
+      width: 4
+      height: 4
+      origin_x: -1.5
+      origin_y: -1.5
+
+      transform_tolerance: 0.2
+      robot_radius: 0.11
+      footprint_padding: 0.01
+
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+        map_topic: "/map"  
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        observation_sources: lidar
+        lidar:
+          topic: "/scan"
+          data_type: "LaserScan"
+          clearing: true
+          marking: true
+          obstacle_range: 2.0
+          raytrace_range: 3.0
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        inflation_radius: 0.30
+        cost_scaling_factor: 20.0
+
+# -------- Local costmap (control) --------
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      use_sim_time: false
+      global_frame: "odom"
+      robot_base_frame: "base_footprint"
+
+      rolling_window: true
+      width: 1
+      height: 1
+      resolution: 0.02
+      update_frequency: 10.0
+      publish_frequency: 5.0
+
+      transform_tolerance: 0.05 #0.2
+      robot_radius: 0.11
+      footprint_padding: 0.01
+
+      plugins: ["obstacle_layer", "inflation_layer"]
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        observation_sources: lidar
+        lidar:
+          topic: "/scan"
+          data_type: "LaserScan"
+          clearing: true
+          marking: true
+          obstacle_range: 2.0
+          raytrace_range: 3.0
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        inflation_radius: 0.35 
+        cost_scaling_factor: 10.0 
+ 
