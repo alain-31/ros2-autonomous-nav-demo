@@ -9,8 +9,8 @@ This project demonstrates autonomous navigation with:
 - **Map resolution**: 0.02 m/pixel for stable path planning
 - **Environment**: 1.04 m × 1.91 m rectangular playground with obstacles
 - **Stack**: ROS 2 Humble + Nav2 + slam_toolbox
-- **Demo video**:
-  [Link to LinkedIn post](https://lnkd.in/ejisJFqK)
+- **Demo video**: [Link to LinkedIn post](https://lnkd.in/ejisJFqK)
+
   ![Autonomous Navigation Demo](media/demo.gif)
 
 ## 📁 Repository Structure
