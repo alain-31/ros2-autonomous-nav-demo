@@ -9,8 +9,9 @@ This project demonstrates autonomous navigation with:
 - **Map resolution**: 0.02 m/pixel for stable path planning
 - **Environment**: 1.04 m × 1.91 m rectangular playground with obstacles
 - **Stack**: ROS 2 Humble + Nav2 + slam_toolbox
-
-**Demo video**: [Link to LinkedIn post](https://lnkd.in/ejisJFqK)
+- **Demo video**:
+  [Link to LinkedIn post](https://lnkd.in/ejisJFqK)
+  ![Autonomous Navigation Demo](media/demo.gif)
 
 ## 📁 Repository Structure
 
@@ -27,13 +28,14 @@ nav2-autonomous-demo/
 │   ├── real_robot_pc_mapping_mode.launch.py # Launch file to build the map (laptop)
 │   └── real_robot_pi.launch       # Main navigation launch file (robot - raspberry)
 ├── maps/
-│   ├── playground_post_3_hd.data #  actual scan data (laser measurements) 
+│   ├── playground_post_3_hd.data #  Actual scan data (laser measurements) 
 │   ├── playground_post_3_hd.posegraph # serialized pose graph 
 │   ├── playground_post_3_hd.yaml # Map metadata
 │   └── playground_post_3_hd.pgm  # Map image
 ├── rviz/
 │   └── nav2_view.rviz            # RViz2 configuration
 ├── media/
+│   ├── demo.gif                  # Demo video (for github) 
 │   └── post_3_demo_2_screens.mp4 # Demo video
 └── scripts/
     └── save_map.sh               # Build the map (4 files generated)
